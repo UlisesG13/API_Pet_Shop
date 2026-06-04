@@ -5,16 +5,18 @@ import (
 	infrastructureP "proyecto/src/pets/infrastructure"
 	infrastructureU "proyecto/src/users/infrastructure"
 
+	"fmt"
+	"log"
 	"time"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	gin.SetMode(gin.DebugMode)
 
-	//configurar cors
+	// configurar cors
 	config := cors.Config{
 		AllowOrigins:     []string{"http://localhost:4200"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -23,7 +25,13 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}
-	router := gin.Default()
+
+	router := gin.New()
+	router.Use(gin.Logger(), gin.Recovery())
+
+	if err := router.SetTrustedProxies(nil); err != nil {
+		log.Fatalf("error setting trusted proxies: %v", err)
+	}
 
 	router.Use(cors.New(config))
 
@@ -33,5 +41,12 @@ func main() {
 	infrastructureP.InitPets(dbP, router)
 	infrastructureA.InitAccessories(dbA, router)
 	infrastructureU.InitUsers(dbU, router)
+
+	fmt.Println("\n===== API ROUTES =====")
+	for _, route := range router.Routes() {
+		fmt.Printf("%s %s\n", route.Method, route.Path)
+	}
+	fmt.Println("======================\n")
+
 	router.Run(":8080")
 }
