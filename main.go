@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -18,12 +19,23 @@ func main() {
 
 	// configurar cors
 	config := cors.Config{
-		AllowOrigins:     []string{"http://localhost:4200", "http://localhost:51893", "https://uginses.actividades.icu"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
+		AllowOriginFunc: func(origin string) bool {
+			// allow any localhost origin (development)
+			if strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "http://127.0.0.1:") {
+				return true
+			}
+			// allow deployed frontend origin(s)
+			if origin == "https://uginses.actividades.icu" {
+				return true
+			}
+			// add other trusted origins if needed
+			return false
+		},
 	}
 
 	router := gin.New()
